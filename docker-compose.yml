@@ -1,0 +1,95 @@
+services:
+  auth_db:
+    image: postgres:16
+    container_name: auth_db
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: authdb
+    ports:
+      - "5435:5432"
+    volumes:
+      - authdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: chat_redis
+    ports:
+      - "6379:6379"
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    depends_on:
+      - auth_db
+    environment:
+      DATABASE_URL: postgresql://myuser:mypassword@auth_db:5432/authdb
+      SECRET_KEY: ${SECRET_KEY}
+    ports:
+      - "8010:8000"
+
+  chat_db:
+    image: postgres:16
+    container_name: chat_db
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: chatdb
+    ports:
+      - "5436:5432"
+    volumes:
+      - chatdata:/var/lib/postgresql/data
+
+  chat-service:
+    build: ./chat-service
+    
+    depends_on:
+      - redis
+      - chat_db
+    environment:
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: ${SECRET_KEY}
+      DATABASE_URL: postgresql://myuser:mypassword@chat_db:5432/chatdb
+    ports:
+      - "8000"
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    depends_on:
+      - redis
+
+  auth_test_db:
+    image: postgres:16
+    container_name: auth_test_db
+    environment:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_DB: testdb
+    ports:
+      - "5437:5432"
+
+  chat_test_db:
+    image: postgres:16
+    container_name: chat_test_db
+    environment:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_DB: testdb
+    ports:
+      - "5438:5432"
+
+  test_redis:
+    image: redis:7
+    container_name: test_redis
+    ports:
+      - "6380:6379"
+
+
+
+volumes:
+  authdata:
+  chatdata:
+
+
+

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-db
+  template:
+    metadata:
+      labels:
+        app: auth-db
+    spec:
+      containers:
+        - name: auth-db
+          image: postgres:16
+          env:
+            - name: POSTGRES_USER
+              value: myuser
+            - name: POSTGRES_PASSWORD
+              value: mypassword
+            - name: POSTGRES_DB
+              value: authdb
+          ports:
+            - containerPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-db
+spec:
+  selector:
+    app: auth-db
+  ports:
+    - port: 5432
+      targetPort: 5432

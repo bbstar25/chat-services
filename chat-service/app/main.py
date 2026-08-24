@@ -3,7 +3,7 @@ import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
-
+from prometheus_fastapi_instrumentator import Instrumentator
 from app.auth import decode_token
 from app.redis_client import redis_client
 from app.database import engine, get_db, Base, SessionLocal
@@ -12,6 +12,7 @@ from app import models, schemas
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Chat Service")
+Instrumentator().instrument(app).expose(app)
 
 active_connections: dict[str, dict[str, WebSocket]] = {}
 

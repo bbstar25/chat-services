@@ -1,13 +1,15 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-
+from prometheus_fastapi_instrumentator import Instrumentator
 from app.database import engine, get_db, Base
 from app import models, schemas, auth
+from app.tasks_client import celery_client
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Auth Service")
+Instrumentator().instrument(app).expose(app)
 
 @app.get("/health")
 def health_check():
@@ -29,6 +31,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    celery_client.send_task("send_welcome_email", args=[new_user.email, new_user.username])
     return new_user
 
 @app.post("/login", response_model=schemas.Token)
